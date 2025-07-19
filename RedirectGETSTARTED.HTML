@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Business Management</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f0f0f0;
+      transition: background 0.3s;
+    }
+    body.dark {
+      background: #121212;
+      color: white;
+    }
+    header {
+      background: cyan;
+      color: black;
+      padding: 1em;
+      text-align: right;
+      font-weight: bold;
+      font-size: 1.2em;
+    }
+    .tab-nav {
+      display: flex;
+      justify-content: center;
+      background: #ddd;
+    }
+    .tab-nav button {
+      flex: 1;
+      padding: 1em;
+      background: #ccc;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .tab-nav button.active {
+      background: cyan;
+    }
+    .tab-content {
+      display: none;
+      padding: 2em;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    input, button, select {
+      width: 100%;
+      padding: 1em;
+      margin: 0.5em 0;
+      border-radius: 0.5em;
+      border: 1px solid #ccc;
+    }
+    body.dark input, body.dark button, body.dark select {
+      background: #2c2c2c;
+      color: white;
+      border: 1px solid #555;
+    }
+    button {
+      background: #0077cc;
+      color: white;
+    }
+    .hidden { display: none; }
+    .profile-pic {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      object-fit: cover;
+      display: block;
+      margin: 1em auto;
+    }
+    .center { text-align: center; }
+  </style>
+</head>
+<body>
+
+<header>Business Management</header>
+
+<div class="container" id="welcomePage">
+  <h2 class="center">Welcome to Business Management</h2>
+  <input type="text" id="companyName" placeholder="Enter your company name" />
+  <button onclick="goToAuth()">Continue</button>
+</div>
+
+<div class="container hidden" id="authPage">
+  <h2 id="authTitle">Sign In</h2>
+  <input type="email" id="authEmail" placeholder="Email" />
+  <input type="password" id="authPassword" placeholder="Password" />
+  <div id="signupExtra" class="hidden">
+    <input type="file" id="profilePic" accept="image/*" />
+  </div>
+  <button onclick="handleAuth()">Submit</button>
+  <p class="center"><a href="#" onclick="toggleAuth()">Don't have an account? Sign up</a></p>
+  <p class="center"><a href="#" onclick="forgotPassword()">Forgot Password?</a></p>
+</div>
+
+<div class="hidden" id="dashboard">
+  <div class="tab-nav">
+    <button onclick="showTab('databaseTab')" class="active">Database</button>
+    <button onclick="showTab('accountTab')">Account</button>
+    <button onclick="showTab('settingsTab')">Settings</button>
+  </div>
+
+  <div class="tab-content active" id="databaseTab">
+    <h2 class="center">Database</h2>
+    <input type="text" placeholder="New Entry" id="dbEntry" />
+    <button onclick="addEntry()">Add to Database</button>
+    <ul id="dbList"></ul>
+  </div>
+
+  <div class="tab-content" id="accountTab">
+    <h2 class="center">Account Info</h2>
+    <img id="profilePreview" class="profile-pic" src="" alt="Profile Picture" />
+    <div class="center">
+      <p>Email: <span id="userEmail"></span></p>
+      <p>Password: <span id="userPass"></span></p>
+    </div>
+  </div>
+
+  <div class="tab-content" id="settingsTab">
+    <h2 class="center">Settings</h2>
+    <button onclick="toggleDarkMode()">Toggle Dark Mode</button>
+    <button onclick="viewCredentials()">View Login Info</button>
+    <button onclick="logout()">Log Out</button>
+    <button onclick="deleteAccount()">Delete Account</button>
+    <button onclick="leaveSite()">Leave Site</button>
+  </div>
+</div>
+
+<script>
+  let isSignup = false;
+
+  function goToAuth() {
+    const name = document.getElementById("companyName").value.trim();
+    if (name) {
+      localStorage.setItem("company", name);
+      document.getElementById("welcomePage").classList.add("hidden");
+      document.getElementById("authPage").classList.remove("hidden");
+    }
+  }
+
+  function toggleAuth() {
+    isSignup = !isSignup;
+    document.getElementById("authTitle").textContent = isSignup ? "Sign Up" : "Sign In";
+    document.getElementById("signupExtra").classList.toggle("hidden", !isSignup);
+  }
+
+  function forgotPassword() {
+    const email = prompt("Enter your email to reset password:");
+    if (email) alert("This is offline mode. Remember your password manually.");
+  }
+
+  function handleAuth() {
+    const email = document.getElementById("authEmail").value;
+    const password = document.getElementById("authPassword").value;
+    if (!email || !password) return alert("Fill in all fields");
+
+    if (isSignup) {
+      localStorage.setItem("user_email", email);
+      localStorage.setItem("user_password", password);
+
+      const pic = document.getElementById("profilePic").files[0];
+      if (pic) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          localStorage.setItem("user_pic", reader.result);
+          loginUser(email, password);
+        };
+        reader.readAsDataURL(pic);
+      } else {
+        loginUser(email, password);
+      }
+    } else {
+      const savedEmail = localStorage.getItem("user_email");
+      const savedPass = localStorage.getItem("user_password");
+      if (email === savedEmail && password === savedPass) {
+        loginUser(email, password);
+      } else {
+        alert("Invalid credentials");
+      }
+    }
+  }
+
+  function loginUser(email, password) {
+    document.getElementById("userEmail").textContent = email;
+    document.getElementById("userPass").textContent = password;
+    const img = localStorage.getItem("user_pic");
+    if (img) document.getElementById("profilePreview").src = img;
+
+    document.getElementById("authPage").classList.add("hidden");
+    document.getElementById("dashboard").classList.remove("hidden");
+  }
+
+  function toggleDarkMode() {
+    document.body.classList.toggle("dark");
+  }
+
+  function logout() {
+    document.getElementById("dashboard").classList.add("hidden");
+    document.getElementById("authPage").classList.remove("hidden");
+  }
+
+  function deleteAccount() {
+    if (confirm("Are you sure you want to delete your account?")) {
+      localStorage.clear();
+      location.reload();
+    }
+  }
+
+  function viewCredentials() {
+    const email = localStorage.getItem("user_email") || "None";
+    const pass = localStorage.getItem("user_password") || "None";
+    alert(`Email: ${email}\nPassword: ${pass}`);
+  }
+
+  function leaveSite() {
+    if (confirm("Are you sure you want to quit the site?")) window.close();
+  }
+
+  function showTab(tabId) {
+    document.querySelectorAll(".tab-content").forEach(el => el.classList.remove("active"));
+    document.querySelectorAll(".tab-nav button").forEach(btn => btn.classList.remove("active"));
+    document.getElementById(tabId).classList.add("active");
+    document.querySelector(`.tab-nav button[onclick*='${tabId}']`).classList.add("active");
+  }
+
+  function addEntry() {
+    const val = document.getElementById("dbEntry").value.trim();
+    if (!val) return;
+    const ul = document.getElementById("dbList");
+    const li = document.createElement("li");
+    li.textContent = val;
+    ul.appendChild(li);
+    document.getElementById("dbEntry").value = "";
+  }
+</script>
+
+</body>
+</html>
